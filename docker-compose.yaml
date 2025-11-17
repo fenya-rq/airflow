@@ -64,17 +64,29 @@ x-airflow-common:
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
     AIRFLOW__CORE__EXECUTION_API_SERVER_URL: 'http://airflow-apiserver:8080/execution/'
     AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: 'true'
-    # WARNING: Use _PIP_ADDITIONAL_REQUIREMENTS option ONLY for a quick checks
-    # for other purpose (development, test and especially production usage) build/extend Airflow image.
-    # _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
-    # The following line can be used to set a custom config file, stored in the local config folder
     AIRFLOW_CONFIG: '/opt/airflow/config/airflow.cfg'
+    # Production servers creds
+    PROD_SERVER_USER: ${SERVER_USER}
+    PROD_SERVER_HOST: ${SERVER_HOST}
+    PROD_PATH_TO_SOURCE: ${PATH_TO_SOURCE}
+    PROD_PATH_TO_DESTINATION: ${PATH_TO_DESTINATION}
+    PROD_SSH_PORT: ${SSH_PORT:-22}
+    PROD_SSH_KEY_PATH: ${SSH_PORT:-22}
+#    # Dev servers creds
+#    DEV_SERVER_USER: ${SERVER_USER}
+#    DEV_SERVER_HOST: ${SERVER_HOST}
+#    DEV_PATH_TO_SOURCE: ${PATH_TO_SOURCE}
+#    DEV_PATH_TO_DESTINATION: ${PATH_TO_DESTINATION}
+#    DEV_SSH_PORT: ${SSH_PORT:-22}
+#    DEV_SSH_KEY_PATH: ${SSH_PORT:-22}
   volumes:
     - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
     - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
     - ${AIRFLOW_PROJ_DIR:-.}/config:/opt/airflow/config
     - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
     - ${AIRFLOW_PROJ_DIR:-.}/artefacts:/opt/airflow/artefacts
+    # Монтируем том с SSH ключом во все контейнеры
+    - ${AIRFLOW_PROJ_DIR:-.}/keys/pg_server_key:/opt/keys/pg_server_key:ro
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
     &airflow-common-depends-on

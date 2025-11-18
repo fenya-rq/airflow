@@ -178,3 +178,5 @@ __marimo__/
 /ex.py
 /logs/*
 !/logs/.gitkeep
+/keys/*
+!/keys/.gitkeep

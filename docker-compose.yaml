@@ -66,19 +66,19 @@ x-airflow-common:
     AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: 'true'
     AIRFLOW_CONFIG: '/opt/airflow/config/airflow.cfg'
     # Production servers creds
-    PROD_SERVER_USER: ${SERVER_USER}
-    PROD_SERVER_HOST: ${SERVER_HOST}
-    PROD_PATH_TO_SOURCE: ${PATH_TO_SOURCE}
-    PROD_PATH_TO_DESTINATION: ${PATH_TO_DESTINATION}
-    PROD_SSH_PORT: ${SSH_PORT:-22}
-    PROD_SSH_KEY_PATH: ${SSH_PORT:-22}
+    PROD_SERVER_USER: ${PROD_SERVER_USER}
+    PROD_SERVER_HOST: ${PROD_SERVER_HOST}
+    PROD_PATH_TO_SOURCE: ${PROD_PATH_TO_SOURCE}
+    PROD_PATH_TO_DESTINATION: ${PROD_PATH_TO_DESTINATION}
+    PROD_SSH_PORT: ${PROD_SSH_PORT:-22}
+    PROD_SSH_KEY_PATH: ${PROD_SSH_KEY_PATH}
 #    # Dev servers creds
-#    DEV_SERVER_USER: ${SERVER_USER}
-#    DEV_SERVER_HOST: ${SERVER_HOST}
-#    DEV_PATH_TO_SOURCE: ${PATH_TO_SOURCE}
-#    DEV_PATH_TO_DESTINATION: ${PATH_TO_DESTINATION}
-#    DEV_SSH_PORT: ${SSH_PORT:-22}
-#    DEV_SSH_KEY_PATH: ${SSH_PORT:-22}
+#    DEV_SERVER_USER: ${DEV_SERVER_USER}
+#    DEV_SERVER_HOST: ${DEV_SERVER_HOST}
+#    DEV_PATH_TO_SOURCE: ${DEV_PATH_TO_SOURCE}
+#    DEV_PATH_TO_DESTINATION: ${DEV_PATH_TO_DESTINATION}
+#    DEV_SSH_PORT: ${DEV_SSH_PORT:-22}
+#    DEV_SSH_KEY_PATH: ${DEV_SSH_KEY_PATH}
   volumes:
     - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
     - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
@@ -95,7 +95,7 @@ x-airflow-common:
     postgres:
       condition: service_healthy
   extra_hosts:
-    - "host.docker.internal:host-gateway"
+    - "prod-ssh-server:<taget host IP>"
 
 services:
   postgres:
@@ -143,6 +143,8 @@ services:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
+    extra_hosts:
+      - "prod-ssh-server:<taget host IP>"
 
   airflow-scheduler:
     <<: *airflow-common
@@ -159,7 +161,7 @@ services:
       airflow-init:
         condition: service_completed_successfully
     extra_hosts:
-      - "host.docker.internal:host-gateway"
+      - "prod-ssh-server:<taget host IP>"
 
   airflow-dag-processor:
     <<: *airflow-common
@@ -175,6 +177,8 @@ services:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
+    extra_hosts:
+      - "prod-ssh-server:<taget host IP>"
 
   airflow-worker:
     <<: *airflow-common
@@ -201,7 +205,7 @@ services:
       airflow-init:
         condition: service_completed_successfully
     extra_hosts:
-      - "host.docker.internal:host-gateway"
+      - "prod-ssh-server:<taget host IP>"
 
   airflow-triggerer:
     <<: *airflow-common
@@ -217,6 +221,8 @@ services:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
+    extra_hosts:
+      - "prod-ssh-server:<taget host IP>"
 
   airflow-init:
     <<: *airflow-common
@@ -271,14 +277,14 @@ services:
         echo
         echo "Creating missing opt dirs if missing:"
         echo
-        mkdir -v -p /opt/airflow/{logs,dags,plugins,config}
+        mkdir -v -p /opt/airflow/{logs,dags,plugins,config,keys}
         echo
         echo "Airflow version:"
         /entrypoint airflow version
         echo
         echo "Files in shared volumes:"
         echo
-        ls -la /opt/airflow/{logs,dags,plugins,config}
+        ls -la /opt/airflow/{logs,dags,plugins,config,keys}
         echo
         echo "Running airflow config list to create default config file if missing."
         echo
@@ -286,19 +292,22 @@ services:
         echo
         echo "Files in shared volumes:"
         echo
-        ls -la /opt/airflow/{logs,dags,plugins,config}
+        ls -la /opt/airflow/{logs,dags,plugins,config,keys}
         echo
         echo "Change ownership of files in /opt/airflow to ${AIRFLOW_UID}:0"
         echo
         chown -R "${AIRFLOW_UID}:0" /opt/airflow/
         echo
+        echo "Change ownership of files in shared volumes with SSH keys to ${AIRFLOW_UID}:0"
+        chown -R "${AIRFLOW_UID}:0" /opt/keys/
+        echo
         echo "Change ownership of files in shared volumes to ${AIRFLOW_UID}:0"
         echo
-        chown -v -R "${AIRFLOW_UID}:0" /opt/airflow/{logs,dags,plugins,config}
+        chown -v -R "${AIRFLOW_UID}:0" /opt/airflow/{logs,dags,plugins,config,keys}
         echo
         echo "Files in shared volumes:"
         echo
-        ls -la /opt/airflow/{logs,dags,plugins,config}
+        ls -la /opt/airflow/{logs,dags,plugins,config,keys}
 
     # yamllint enable rule:line-length
     environment:
@@ -309,6 +318,10 @@ services:
       _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-airflow}
       _PIP_ADDITIONAL_REQUIREMENTS: ''
     user: "0:0"
+    volumes:
+      - ${AIRFLOW_PROJ_DIR:-.}/keys/pg_server_key:/opt/keys/pg_server_key:ro
+    extra_hosts:
+      - "prod-ssh-server:<taget host IP>"
 
   airflow-cli:
     <<: *airflow-common

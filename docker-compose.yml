@@ -94,8 +94,6 @@ x-airflow-common:
       condition: service_healthy
     postgres:
       condition: service_healthy
-  extra_hosts:
-    - "prod-ssh-server:<taget host IP>"
 
 services:
   postgres:
@@ -143,8 +141,6 @@ services:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
-    extra_hosts:
-      - "prod-ssh-server:<taget host IP>"
 
   airflow-scheduler:
     <<: *airflow-common
@@ -160,8 +156,6 @@ services:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
-    extra_hosts:
-      - "prod-ssh-server:<taget host IP>"
 
   airflow-dag-processor:
     <<: *airflow-common
@@ -177,8 +171,6 @@ services:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
-    extra_hosts:
-      - "prod-ssh-server:<taget host IP>"
 
   airflow-worker:
     <<: *airflow-common
@@ -204,8 +196,6 @@ services:
         condition: service_healthy
       airflow-init:
         condition: service_completed_successfully
-    extra_hosts:
-      - "prod-ssh-server:<taget host IP>"
 
   airflow-triggerer:
     <<: *airflow-common
@@ -221,8 +211,6 @@ services:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
-    extra_hosts:
-      - "prod-ssh-server:<taget host IP>"
 
   airflow-init:
     <<: *airflow-common
@@ -320,8 +308,6 @@ services:
     user: "0:0"
     volumes:
       - ${AIRFLOW_PROJ_DIR:-.}/keys/pg_server_key:/opt/keys/pg_server_key:ro
-    extra_hosts:
-      - "prod-ssh-server:<taget host IP>"
 
   airflow-cli:
     <<: *airflow-common

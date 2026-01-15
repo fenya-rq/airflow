@@ -180,3 +180,10 @@ __marimo__/
 !/logs/.gitkeep
 /keys/*
 !/keys/.gitkeep
+
+airflow.cfg
+
+local.docker-compose.yml
+docker/local.Dockerfile
+entrypoint_original
+docker-compose_original.yml
